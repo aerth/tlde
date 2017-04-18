@@ -9,10 +9,10 @@ import (
 
 var config = diamond.ConfigFields{
 	Addr:       "0.0.0.0:" + os.Getenv("PORT"),
-	SocketHTTP: os.Getenv("SOCKET"),
+	SocketHTTP:  os.Getenv("SOCKET"),
 	Name:       "tl;de",
 	Level:      3,
-	Socket:     "/tmp/tlde.socket",
+	Socket:     os.Getenv("ADMIN"),
 	Kicks:      true,
 	Kickable:   true,
 }
