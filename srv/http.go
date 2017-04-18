@@ -42,15 +42,18 @@ func (m *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	var u string
 	u = strings.Split(strings.TrimPrefix(r.URL.Path, "/~"), "/")[0]
-	m.Log.Println(u)
 	m.Log.Println(r.URL.Path)
 
 	if u != "" {
+		if !strings.HasPrefix(r.URL.Path, "/~"+u+"/") {
+			new := strings.Replace(r.URL.Path, "/~"+u, "/~"+u+"/", 1)
+			http.Redirect(w, r, new, http.StatusFound)
+			return
+		}
 		dir := fmt.Sprintf("/home/%s/%s", u, publichtml)
 		m.Log.Println("Serving Dir:", dir)
 		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/~"+u)
-		m.Log.Println(r.URL.Path)
-		ha := http.FileServer(http.Dir(dir))
-		ha.ServeHTTP(w, r)
+		handler := http.FileServer(http.Dir(dir))
+		handler.ServeHTTP(w, r)
 	}
 }
