@@ -12,7 +12,7 @@ import (
 
 var publichtml = "Public" // consider public_html instead of Public
 // CHMODDIR default dir permissions
-var CHMODDIR = 0755       // public
+var CHMODDIR = 0755 // public
 // Mux is a router
 type Mux struct {
 	Log *log.Logger
@@ -35,8 +35,8 @@ func (m *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if !strings.HasPrefix(r.URL.Path, "/~") {
 		buf := new(bytes.Buffer)
 		buf.WriteString("#!/bin/sh\n")
-		buf.WriteString("echo wtf r u doing sheller\n")
-		buf.WriteString("echo danger zone\n")
+		buf.WriteString("echo hello sheller\n")
+		buf.WriteString("echo this is a tilde server, try /~user/\n")
 		w.Write(buf.Bytes())
 		return
 	}
@@ -46,12 +46,11 @@ func (m *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	m.Log.Println(r.URL.Path)
 
 	if u != "" {
-	dir := fmt.Sprintf("/home/%s/%s", u, publichtml)
-	m.Log.Println("Serving Dir:", dir)
-	r.URL.Path = strings.TrimPrefix(r.URL.Path, "/~"+u)
-	m.Log.Println(r.URL.Path)
-	ha := http.FileServer(http.Dir(dir))
-	
-	ha.ServeHTTP(w,r)
+		dir := fmt.Sprintf("/home/%s/%s", u, publichtml)
+		m.Log.Println("Serving Dir:", dir)
+		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/~"+u)
+		m.Log.Println(r.URL.Path)
+		ha := http.FileServer(http.Dir(dir))
+		ha.ServeHTTP(w, r)
 	}
 }

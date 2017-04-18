@@ -1,17 +1,17 @@
 package main
 
 import (
-	"os"
-	"github.com/aertx/tlde/srv"
 	diamond "github.com/aerth/diamond/lib"
+	"github.com/aertx/tlde/srv"
+	"os"
 )
 
 var config = diamond.ConfigFields{
-	Addr:   "0.0.0.0:"+os.Getenv("PORT"),
-	Name:   "tl;de",
-	Level:  3,
-	Socket: "/tmp/tlde.socket",
-	Kicks: true,
+	Addr:     "0.0.0.0:" + os.Getenv("PORT"),
+	Name:     "tl;de",
+	Level:    3,
+	Socket:   "/tmp/tlde.socket",
+	Kicks:    true,
 	Kickable: true,
 }
 
