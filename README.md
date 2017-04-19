@@ -17,3 +17,4 @@
 Use ```diamond admin``` to connect to ADMIN port
 
 ```go get -v -u github.com/aerth/diamond/cmd/diamond-admin```
+
