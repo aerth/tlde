@@ -48,7 +48,7 @@ func (m *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Server", "tlde/"+strings.TrimPrefix(version, "v"))
 	m.Log.Println(r.Method, r.URL.Path)
 	if r.URL.Path == "/" {
-		http.NotFound(w, r)
+		w.Write([]byte(homepage))
 		return
 	}
 	if !strings.HasPrefix(r.URL.Path, "/~") {
@@ -77,3 +77,14 @@ func (m *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	handler := http.StripPrefix("/~"+u+"/", http.FileServer(http.Dir(dir)))
 	handler.ServeHTTP(w, r)
 }
+
+var homepage = ``+
+`<!doctype html>
+<html>
+<code>
+This is a /~tlde/ server
+</code>
+</html>
+
+
+`
