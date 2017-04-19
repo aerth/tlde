@@ -10,19 +10,24 @@ import (
 	"strings"
 )
 
-var version = "v0.0.1"
-
 // Version string
 func Version() string {
 	return fmt.Sprint("tlde ", version)
 }
 
-var publichtml = "Public" // consider public_html instead of Public
+var version = "v0.0.2"
+var publichtml = "Public"
+
+func init(){
+	if os.Getenv("PUBLIC") != "" {
+		publichtml = os.Getenv("PUBLIC")
+	}
+}
 
 // CHMODDIR default dir permissions
 var CHMODDIR = 0755 // public
 
-// Mux httpmultiplexer
+// Mux is a http handler really
 type Mux struct {
 	Log *log.Logger
 }
@@ -79,12 +84,24 @@ func (m *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 var homepage = ``+
-`<!doctype html>
-<html>
-<code>
-This is a /~tlde/ server
-</code>
+`<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>&lrm;</title>
+    <meta name="viewport" content="initial-scale = 1, maximum-scale=1, user-scalable = 0"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+    <meta name="HandheldFriendly" content="true"/>
+    <meta name="MobileOptimized" content="320"/>
+    <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet" type="text/css">
+    <link href="http://hashbang.sh/assets/local.css" rel="stylesheet" type="text/css">
+  </head>
+  <body>
+    <script src="http://hashbang.sh/assets/icon.js"></script>
+    <h1>#!</h1>
+    <a href="view-source:https://hashbang.sh">
+      <code>sh <(curl hashbang.sh | gpg)</code>
+    </a>
+  </body>
 </html>
-
-
 `
