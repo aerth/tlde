@@ -1,3 +1,4 @@
+// tlde web server
 package main
 
 import (
@@ -8,7 +9,7 @@ import (
 )
 
 var config = diamond.ConfigFields{
-	SocketHTTP:  os.Getenv("SOCKET"),
+	SocketHTTP: os.Getenv("SOCKET"),
 	Name:       "tl;de",
 	Level:      3,
 	Socket:     os.Getenv("ADMIN"),
@@ -16,15 +17,15 @@ var config = diamond.ConfigFields{
 	Kickable:   true,
 }
 
-func init(){
+func init() {
 	println(tilde.Version())
 	if os.Getenv("ADMIN") == "" ||
-	   os.Getenv("PORT") == "" {
+		os.Getenv("PORT") == "" {
 		println("need $ADMIN location and $PORT number")
 		println("optional $SOCKET http unix socket location")
 		println("example: env PORT=8080 ADMIN=./tlde.socket tlde")
-	   	os.Exit(111)
-	   }
+		os.Exit(111)
+	}
 
 	config.Addr = "0.0.0.0:" + os.Getenv("PORT")
 }

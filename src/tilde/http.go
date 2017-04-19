@@ -14,7 +14,7 @@ var version = "v0.0.1"
 
 // Version string
 func Version() string {
-	return fmt.Sprint("tlde", version)
+	return fmt.Sprint("tlde ", version)
 }
 
 var publichtml = "Public" // consider public_html instead of Public
@@ -39,7 +39,7 @@ func Handler() *Mux {
 	} else {
 		mw = io.MultiWriter(logfile, os.Stderr)
 	}
-	println("logging to logfile.Name()")
+	println("logging to", logfile.Name())
 	m.Log = log.New(mw, "[tl;de] ", log.Lshortfile)
 	return m
 }
