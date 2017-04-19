@@ -58,7 +58,7 @@ func (m *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var u string
 	u = strings.Split(strings.TrimPrefix(r.URL.Path, "/~"), "/")[0]
 
-	if u != "" {
+	if u == "" {
 		http.NotFound(w, r)
 		return
 	}
@@ -74,6 +74,6 @@ func (m *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	dir := fmt.Sprintf("/home/%s/%s", u, publichtml)
 
 	// let net/http FileServer handle the rest
-	handler := http.StripPrefix("/~"+u, http.FileServer(http.Dir(dir)))
+	handler := http.StripPrefix("/~"+u+"/", http.FileServer(http.Dir(dir)))
 	handler.ServeHTTP(w, r)
 }
