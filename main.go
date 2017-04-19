@@ -4,11 +4,10 @@ import (
 	"os"
 
 	diamond "github.com/aerth/diamond/lib"
-	"github.com/aertx/tlde/srv"
+	"github.com/aerth/tlde/src/tilde"
 )
 
 var config = diamond.ConfigFields{
-	Addr:       "0.0.0.0:" + os.Getenv("PORT"),
 	SocketHTTP:  os.Getenv("SOCKET"),
 	Name:       "tl;de",
 	Level:      3,
@@ -17,14 +16,25 @@ var config = diamond.ConfigFields{
 	Kickable:   true,
 }
 
+func init(){
+	println(tilde.Version())
+	if os.Getenv("ADMIN") == "" ||
+	   os.Getenv("PORT") == "" {
+		println("need $ADMIN location and $PORT number")
+		println("optional $SOCKET http unix socket location")
+		println("example: env PORT=8080 ADMIN=./tlde.socket tlde")
+	   	os.Exit(111)
+	   }
+
+	config.Addr = "0.0.0.0:" + os.Getenv("PORT")
+}
+
 func main() {
-	handler := srv.NewMux()
-	server := diamond.NewServer()
+	server := diamond.NewServer(tilde.Handler())
 	server.Config = config
 	if os.Getenv("PORT") == "" {
 		server.Config.Addr = ""
 	}
-	server.SetMux(handler)
 	err := server.Start()
 	if err != nil {
 		println(err.Error())
