@@ -10,3 +10,6 @@ test:
 
 run: build
 	env PORT=8080 ADMIN=tl.de ./tlde
+
+run2: build
+	env PORT=8080 ADMIN=tl.de FORMATPATH='/usr/home/%s/%s' ./tlde
