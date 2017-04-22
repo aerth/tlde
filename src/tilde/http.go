@@ -92,7 +92,7 @@ func (m *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// let net/http FileServer handle the rest
 	reqfile := strings.TrimPrefix(r.URL.Path, "/~"+u+"/")
 	// dont follow symlinks
-	handler := mkhandler(dir, reqfile)
+	handler := mkhandler(dir, reqfile, m.Log)
 	//	handler := http.StripPrefix("/~"+u+"/", http.FileServer(http.Dir(dir)))
 	handler.ServeHTTP(w, r)
 }
@@ -120,22 +120,22 @@ var homepage = `` +
 </html>
 `
 
-func isgood(abs string) bool {
+func isgood(abs string, logger *log.Logger) bool {
 	realpath, err := filepath.EvalSymlinks(abs)
 	if err != nil {
-		log.Println(err)
+		logger.Println(err)
 		return false
 	}
-	log.Println(realpath, "from", abs)
+	logger.Println(realpath, "from", abs)
 	return realpath == abs
 }
 
-func mkhandler(prefix, path string) http.Handler {
+func mkhandler(prefix, path string, logger *log.Logger) http.Handler {
 	filename := filepath.Join(prefix, path)
 	// file exists
 	_, err := os.Stat(filename)
 	if err != nil {
-		log.Println(filename, err)
+		logger.Println(filename, err)
 		return http.HandlerFunc(NotFoundHandler)
 	}
 
@@ -143,20 +143,19 @@ func mkhandler(prefix, path string) http.Handler {
 	abs, _ := filepath.Abs(filename)
 
 	// absolute path == filepath
-	if isgood(abs) {
+	if isgood(abs, logger) {
 		return http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
-				log.Println("found", r.URL.Path, abs)
+				logger.Println("found", r.URL.Path, abs)
 				http.ServeFile(w, r, abs)
 			})
 	}
 
 	// not good, meaning absolute path is != filepath
-	log.Println(filename, "not good file, giving 404")
+	logger.Println(filename, "not good file, giving 404")
 	return http.HandlerFunc(NotFoundHandler)
 }
 
 func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("not found:", r.URL.Path)
 	http.NotFound(w, r)
 }
