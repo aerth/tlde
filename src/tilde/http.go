@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -18,9 +19,18 @@ func Version() string {
 var version = "v0.0.2"
 var publichtml = "Public"
 
-func init(){
+// formatpath is how we find user home dir
+// first var is username, second var is publichtml
+// for /home/user/[publichtml]
+// consider /path/to/home/%s/%s
+var formatpath = "/usr/home/%s/%s"
+
+func init() {
 	if os.Getenv("PUBLIC") != "" {
 		publichtml = os.Getenv("PUBLIC")
+	}
+	if os.Getenv("FORMATPATH") != "" {
+		formatpath = os.Getenv("FORMATPATH")
 	}
 }
 
@@ -76,15 +86,18 @@ func (m *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// public folder
-	dir := fmt.Sprintf("/home/%s/%s", u, publichtml)
+	dir := fmt.Sprintf(formatpath, u, publichtml)
 
 	// let net/http FileServer handle the rest
-	handler := http.StripPrefix("/~"+u+"/", http.FileServer(http.Dir(dir)))
+	reqfile := strings.TrimPrefix(r.URL.Path, "/~"+u+"/")
+	// dont follow symlinks
+	handler := mkhandler(dir, reqfile)
+	//	handler := http.StripPrefix("/~"+u+"/", http.FileServer(http.Dir(dir)))
 	handler.ServeHTTP(w, r)
 }
 
-var homepage = ``+
-`<!DOCTYPE html>
+var homepage = `` +
+	`<!DOCTYPE html>
 <html lang="en">
   <head>
     <title>&lrm;</title>
@@ -105,3 +118,44 @@ var homepage = ``+
   </body>
 </html>
 `
+
+func isgood(abs string) bool {
+	realpath, err := filepath.EvalSymlinks(abs)
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+	log.Println(realpath, "from", abs)
+	return realpath == abs
+}
+
+func mkhandler(prefix, path string) http.Handler {
+	filename := filepath.Join(prefix, path)
+	// file exists
+	_, err := os.Stat(filename)
+	if err != nil {
+		log.Println(filename, err)
+		return http.HandlerFunc(NotFoundHandler)
+	}
+
+	// get absolute path
+	abs, _ := filepath.Abs(filename)
+
+	// absolute path == filepath
+	if isgood(abs) {
+		return http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				log.Println("found", r.URL.Path, abs)
+				http.ServeFile(w, r, abs)
+			})
+	}
+
+	// not good, meaning absolute path is != filepath
+	log.Println(filename, "not good file, giving 404")
+	return http.HandlerFunc(NotFoundHandler)
+}
+
+func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("not found:", r.URL.Path)
+	http.NotFound(w, r)
+}
