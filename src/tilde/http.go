@@ -23,7 +23,8 @@ var publichtml = "Public"
 // first var is username, second var is publichtml
 // for /home/user/[publichtml]
 // consider /path/to/home/%s/%s
-var formatpath = "/usr/home/%s/%s"
+var formatpath = "/home/%s/%s"
+//var formatpath = "/usr/home/%s/%s"
 
 func init() {
 	if os.Getenv("PUBLIC") != "" {
