@@ -31,7 +31,7 @@ func init() {
 }
 
 func main() {
-	server := diamond.NewServer(tilde.Handler())
+	server := diamond.NewServer(tilde.NewHandler())
 	server.Config = config
 	if os.Getenv("PORT") == "" {
 		server.Config.Addr = ""
