@@ -6,11 +6,11 @@
 
 ### variables
 
-```SOCKET``` variable defines location of web socket
+```SOCKET``` variable defines location of web socket, can be empty if PORT is not
 
 ```ADMIN``` variable defines location of [diamond](https://github.com/aerth/diamond) admin socket
 
-```PORT``` variable defines what port to listen on
+```PORT``` variable defines what port to listen on, can be empty if SOCKET is not
 
 ### tlde is a diamond
 

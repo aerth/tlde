@@ -181,6 +181,6 @@ func (h *Handler) isgood(abs string) bool {
 		h.Log.Println("not serving symlink to", realpath, "from", abs)
 		return false
 	}
-	
+
 	return true
 }
