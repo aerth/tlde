@@ -63,6 +63,10 @@ func Handler() *Mux {
 func (m *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Server", "tlde/"+strings.TrimPrefix(version, "v"))
 	m.Log.Println(r.Method, r.URL.Path)
+	if r.Method != "GET" {
+		http.Error(w, "invalid method", http.StatusMethodNotAllowed)
+		return
+	}
 	if r.URL.Path == "/" {
 		w.Write([]byte(homepage))
 		return
