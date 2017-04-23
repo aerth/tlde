@@ -105,7 +105,7 @@ func (m *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		m.mu.Lock()
 		status := time.Now().Sub(m.boottime)
 		m.mu.Unlock()
-		w.Write([]byte(status.String()))
+		w.Write([]byte(status.String()+"\n"))
 		return
 	}
 
