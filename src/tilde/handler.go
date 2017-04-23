@@ -1,3 +1,27 @@
+/*
+* The MIT License (MIT)
+*
+* Copyright (c) 2017  aerth <aerth@riseup.net>
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+ */
+
 package tilde
 
 import (
@@ -8,41 +32,16 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
+	"time"
 )
 
-// Version string
-func Version() string {
-	return fmt.Sprint("tlde ", version)
-}
-
-var version = "v0.0.3"
-
-// PublicDir such as Public or public_html
-var PublicDir = "Public"
-
-// FormatPath is how we find user home dir
-// first var is username, second var is publichtml
-// for /home/user/[publichtml]
-// consider /path/to/home/%s/%s
-var FormatPath = "/home/%s/%s"
-
-//var formatpath = "/usr/home/%s/%s"
-
-func init() {
-	if os.Getenv("PUBLIC") != "" {
-		PublicDir = os.Getenv("PUBLIC")
-	}
-	if os.Getenv("FORMATPATH") != "" {
-		FormatPath = os.Getenv("FORMATPATH")
-	}
-}
-
-// CHMODDIR default dir permissions
-var CHMODDIR = 0755 // public
-
-// Handler handles http requests
+// Handler is a http.Handler with log
 type Handler struct {
-	Log *log.Logger
+	http.Handler
+	mu       sync.Mutex
+	boottime time.Time
+	Log      *log.Logger
 }
 
 // NewHandler returns a http handler that serves /~tilde/ prefix
@@ -51,21 +50,22 @@ type Handler struct {
 // but not serve them.
 func NewHandler() *Handler {
 	m := new(Handler)
+	os.Rename("tlde.log", "tlde.log.99")
 	logfile, err := os.Create("tlde.log")
 	if err != nil {
 		println(err.Error())
 		logfile = nil
 	}
 
-	var mw io.Writer
+	var logger io.Writer
 	if logfile == nil {
-		mw = os.Stderr
+		logger = os.Stderr
 	} else {
-		mw = io.MultiWriter(logfile, os.Stderr)
+		logger = io.MultiWriter(logfile, os.Stderr)
 		println("logging to:", logfile.Name())
 	}
-
-	m.Log = log.New(mw, "[tl;de] ", log.Ltime)
+	m.boottime = time.Now()
+	m.Log = log.New(logger, "[tl;de] ", log.Ltime)
 	return m
 }
 
@@ -81,7 +81,31 @@ func (m *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Handle "/" (homepage)
 	if r.URL.Path == "/" {
-		w.Write([]byte(homepage))
+		homehandler(w, r)
+		return
+	}
+
+	if r.URL.Path == "/tlde.png" {
+		png, err := Asset("tlde.png")
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		w.Write(png)
+		return
+	}
+
+	if r.URL.Path == "/robots.txt" {
+		robots := "User-agent: *\nDisallow: /\n"
+		w.Write([]byte(robots))
+		return
+	}
+
+	if r.URL.Path == "/status" {
+		m.mu.Lock()
+		status := time.Now().Sub(m.boottime)
+		m.mu.Unlock()
+		w.Write([]byte(status.String()))
 		return
 	}
 
@@ -134,9 +158,11 @@ func (m *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// is symlink
-	if !m.isgood(abs) {
-		http.Error(w, "invalid file", http.StatusForbidden)
+	if !fileisgood(abs) {
+		log.Println("bad file:", abs)
+		http.Error(w, "invalid file", http.StatusNotAcceptable)
 		return
+	} else {
 	}
 
 	// ServeFile using net/http's static file server
@@ -145,42 +171,11 @@ func (m *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-// homepage html
-var homepage = `` +
-	`<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <title>#!</title>
-    <meta name="viewport" content="initial-scale = 1, maximum-scale=1, user-scalable = 0"/>
-    <meta name="apple-mobile-web-app-capable" content="yes"/>
-    <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
-    <meta name="HandheldFriendly" content="true"/>
-    <meta name="MobileOptimized" content="320"/>
-    <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet" type="text/css">
-    <link href="http://hashbang.sh/assets/local.css" rel="stylesheet" type="text/css">
-  </head>
-  <body>
-    <script src="http://hashbang.sh/assets/icon.js"></script>
-    <h1>#!</h1>
-    <a href="view-source:https://hashbang.sh">
-      <code>sh <(curl hashbang.sh | gpg)</code>
-    </a>
-  </body>
-</html>
-`
-
-// returns false if symlink
-// comparing absolute vs resolved path is quick and effective
-func (h *Handler) isgood(abs string) bool {
-	realpath, err := filepath.EvalSymlinks(abs)
-	if err != nil {
-		h.Log.Println(err)
-		return false
+func homehandler(w http.ResponseWriter, r *http.Request) {
+	_, err := os.Open(DefaultHomePageFile)
+	if err == nil {
+		http.ServeFile(w, r, DefaultHomePageFile)
+		return
 	}
-	if realpath != abs {
-		h.Log.Println("not serving symlink to", realpath, "from", abs)
-		return false
-	}
-
-	return true
+	w.Write([]byte(homepage))
 }
