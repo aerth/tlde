@@ -70,6 +70,7 @@ func main() {
 	if os.Getenv("PORT") == "" {
 		server.Config.Addr = ""
 	}
+	os.Clearenv()
 	err := server.Start()
 	if err != nil {
 		println(err.Error())
