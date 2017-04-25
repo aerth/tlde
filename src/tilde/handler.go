@@ -153,7 +153,12 @@ func (m *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// 404
 	if _, err := os.Stat(abs); err != nil {
 		m.Log.Println(err)
+		if err.Error() == "stat "+abs+": permission denied"{
+			http.Error(w, "denied", http.StatusPaymentRequired)
+			return
+		} else {
 		http.NotFound(w, r)
+		}
 		return
 	}
 
