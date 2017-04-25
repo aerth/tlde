@@ -105,7 +105,7 @@ func (m *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		m.mu.Lock()
 		status := time.Now().Sub(m.boottime)
 		m.mu.Unlock()
-		w.Write([]byte(status.String()+"\n"))
+		w.Write([]byte(status.String() + "\n"))
 		return
 	}
 
@@ -153,11 +153,11 @@ func (m *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// 404
 	if _, err := os.Stat(abs); err != nil {
 		m.Log.Println(err)
-		if err.Error() == "stat "+abs+": permission denied"{
+		if strings.Contains(err.Error(), "permission denied") {
 			http.Error(w, "denied", http.StatusPaymentRequired)
 			return
 		} else {
-		http.NotFound(w, r)
+			http.NotFound(w, r)
 		}
 		return
 	}
