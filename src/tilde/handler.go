@@ -110,7 +110,7 @@ func (m *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Redirect non-tilde URLs back to homepage
-	if !strings.HasPrefix(r.URL.Path, "/~") {
+	if !strings.HasPrefix(r.URL.Path, "/~") || strings.Contains(r.URL.Path, "..") {
 		http.Redirect(w, r, "/", http.StatusFound)
 		return
 	}
