@@ -8,15 +8,6 @@ import (
 	"github.com/aerth/tlde/src/tilde"
 )
 
-var config = diamond.ConfigFields{
-	SocketHTTP: os.Getenv("SOCKET"),
-	Name:       "tl;de",
-	Level:      3,
-	Socket:     os.Getenv("ADMIN"),
-	Kicks:      true,
-	Kickable:   true,
-}
-
 func init() {
 	println(tilde.Version())
 	if os.Getenv("ADMIN") == "" {
@@ -51,7 +42,7 @@ func usage() {
 	os.Exit(111)
 }
 
-func init() {
+func main() {
 	if os.Getenv("PORT") == "" && os.Getenv("SOCKET") == "" {
 		println("fatal: need either $PORT or $SOCKET (or both) to listen on")
 		usage()
@@ -61,21 +52,24 @@ func init() {
 	if addr == "" {
 		addr = "0.0.0.0"
 	}
-	config.Addr = addr + ":" + os.Getenv("PORT")
-}
-
-func main() {
-	server := diamond.NewServer(tilde.NewHandler())
-	server.Config = config
-	if os.Getenv("PORT") == "" {
-		server.Config.Addr = ""
+	if os.Getenv("PORT") != "" {
+		addr = addr + ":" + os.Getenv("PORT")
 	}
-	os.Clearenv()
-	err := server.Start()
+
+	server, err := diamond.NewServer(tilde.NewHandler(), os.Getenv("ADMIN"))
 	if err != nil {
 		println(err.Error())
 		os.Exit(111)
 	}
-	<-server.Done
+	server.Config.Kickable = true
+	server.AddListener("tcp", addr)
+	os.Clearenv()
+	server.Runlevel(1)
+	err = server.Runlevel(3)
+	if err != nil {
+		println(err.Error())
+		os.Exit(111)
+	}
+	os.Exit(server.Wait())
 
 }
